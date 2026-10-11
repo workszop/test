@@ -9,8 +9,7 @@ Wystarczy otworzyć `index.html` w przeglądarce. Eksport XLSX wymaga połączen
 ## Struktura
 
 ```
-index.html        widoki: lista planów i edytor
-css/styles.css    style (jasny i ciemny motyw, responsywność)
+index.html        widoki: lista planów i edytor; style w znaczniku <style>
 js/calc.js        czysta logika obliczeń i walidacji (bez DOM)
 js/storage.js     zapis w localStorage
 js/app.js         interfejs i eksport

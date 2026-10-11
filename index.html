@@ -4,7 +4,243 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Planer budżetu marketingowego</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <style>
+/* Tokeny kolorów: jasny motyw domyślnie, ciemny gdy system tego chce. */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --text: #1d2330;
+  --muted: #5b6375;
+  --border: #d9dde6;
+  --primary: #2255d6;
+  --primary-text: #ffffff;
+  --ok: #1e8a4c;
+  --ok-bg: #e6f5ec;
+  --warn: #b25e00;
+  --warn-bg: #fff4e0;
+  --danger: #c4312f;
+  --danger-bg: #fdecec;
+  --track: #e6e9f0;
+  --radius: 10px;
+  --gutter: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14171f;
+    --surface: #1d222d;
+    --text: #e8ebf2;
+    --muted: #a3acbf;
+    --border: #323948;
+    --primary: #6b8fff;
+    --primary-text: #0b1020;
+    --ok: #5fd08f;
+    --ok-bg: #173325;
+    --warn: #f0b35a;
+    --warn-bg: #3a2c13;
+    --danger: #ff7a77;
+    --danger-bg: #3d1d1d;
+    --track: #2a3040;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #14171f;
+  --surface: #1d222d;
+  --text: #e8ebf2;
+  --muted: #a3acbf;
+  --border: #323948;
+  --primary: #6b8fff;
+  --primary-text: #0b1020;
+  --ok: #5fd08f;
+  --ok-bg: #173325;
+  --warn: #f0b35a;
+  --warn-bg: #3a2c13;
+  --danger: #ff7a77;
+  --danger-bg: #3d1d1d;
+  --track: #2a3040;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+h1 { font-size: 1.35rem; margin: 0; }
+h2 { font-size: 1.15rem; margin: 0 0 var(--gutter); }
+h3 { font-size: 1rem; margin: 0 0 12px; }
+
+.app-header {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  align-items: center; justify-content: space-between;
+  padding: 16px var(--gutter);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+main { max-width: 1120px; margin: 0 auto; padding: var(--gutter); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--gutter);
+  margin-bottom: var(--gutter);
+}
+
+.muted { color: var(--muted); }
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+.skip-link {
+  position: absolute; left: -999px;
+}
+.skip-link:focus { left: 8px; top: 8px; background: var(--surface); padding: 6px 10px; z-index: 10; }
+
+/* Przyciski i pola: wyraźny focus dla klawiatury (WCAG 2.1 AA) */
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; min-height: 40px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); cursor: pointer;
+}
+.btn:hover { border-color: var(--primary); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary { background: var(--primary); color: var(--primary-text); border-color: var(--primary); }
+.btn-ghost { border-color: transparent; background: transparent; }
+.btn-danger { color: var(--danger); }
+
+input, select {
+  width: 100%;
+  padding: 8px 10px; min-height: 40px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface);
+}
+input[aria-invalid="true"] { border-color: var(--danger); background: var(--danger-bg); }
+
+.field label, .add-category label {
+  display: block; font-size: .85rem; color: var(--muted); margin-bottom: 4px;
+}
+
+/* Lista planów */
+.plan-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.plan-item {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px var(--gutter);
+}
+.plan-item .meta { color: var(--muted); font-size: .9rem; }
+.plan-item .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Pasek toolbar */
+.plan-toolbar {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+  margin-bottom: var(--gutter);
+}
+.toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.save-status { margin: 0; color: var(--muted); font-size: .9rem; }
+.save-status.is-error { color: var(--danger); font-weight: 600; }
+.alert-line { margin: 0; }
+.alert-line + .alert-line { margin-top: 4px; }
+
+/* Konfiguracja */
+.config-form {
+  display: grid; gap: var(--gutter);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+/* Pasek postępu */
+.progress {
+  height: 18px; background: var(--track); border-radius: 999px; overflow: hidden;
+}
+.progress-bar {
+  height: 100%; width: 0; background: var(--muted); transition: width .2s, background-color .2s;
+}
+.progress[data-state="ok"] .progress-bar { background: var(--ok); }
+.progress[data-state="over"] .progress-bar { background: var(--danger); }
+.progress-text { margin: 8px 0 0; font-variant-numeric: tabular-nums; }
+
+.alert {
+  margin-top: 12px; padding: 10px 12px; border-radius: 8px;
+  background: var(--danger-bg); color: var(--danger);
+}
+.alert.is-info { background: var(--warn-bg); color: var(--warn); }
+
+/* Tabele */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
+th { font-size: .82rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
+td.num, th.num { text-align: right; }
+.alloc-table td input { min-width: 90px; text-align: right; }
+.alloc-table td input.name-input { text-align: left; min-width: 160px; }
+.alloc-table th[scope="row"] { display: flex; align-items: center; gap: 6px; font-weight: 400; color: var(--text); }
+.alloc-table th[scope="row"] .name-input { flex: 1 1 auto; min-width: 140px; }
+.alloc-table th[scope="row"] .warn-badge { margin-left: 0; white-space: nowrap; }
+.alloc-table tfoot td { font-weight: 600; border-bottom: none; }
+.row-reserve td { color: var(--muted); font-style: italic; }
+.warn-badge {
+  display: inline-block; margin-left: 6px; padding: 1px 8px;
+  border-radius: 999px; font-size: .78rem;
+  background: var(--warn-bg); color: var(--warn);
+}
+.neg { color: var(--danger); }
+.pos { color: var(--ok); }
+.field-error { display: block; color: var(--danger); font-size: .82rem; margin-top: 2px; }
+
+.add-category { margin-top: var(--gutter); max-width: 480px; }
+.inline { display: flex; gap: 8px; }
+.inline input { flex: 1; }
+
+/* Wykresy */
+.charts {
+  display: grid; gap: var(--gutter);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+.charts .card { margin-bottom: 0; }
+.pie-wrap { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
+.pie {
+  width: 180px; height: 180px; border-radius: 50%; flex-shrink: 0;
+  background: var(--track);
+}
+.legend { list-style: none; padding: 0; margin: 0; font-size: .9rem; }
+.legend li { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+.bars { display: grid; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: minmax(90px, 35%) 1fr auto; gap: 8px; align-items: center; font-size: .9rem; }
+.bar-track { position: relative; height: 14px; background: var(--track); border-radius: 4px; }
+.bar-fill { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: var(--primary); }
+.bar-fill.neg-fill { background: var(--danger); }
+.bar-value { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.disclaimer { color: var(--muted); font-size: .85rem; }
+
+/* Dialog */
+dialog {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text);
+  max-width: 420px; width: calc(100% - 32px); padding: 0;
+}
+dialog::backdrop { background: rgba(0, 0, 0, .4); }
+.dialog-body { padding: var(--gutter); }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--gutter); }
+
+/* Telefon: tylko odczyt w MVP, więc tabelę przewijamy poziomo */
+@media (max-width: 600px) {
+  h1 { font-size: 1.15rem; }
+  .toolbar-actions .btn { flex: 1 1 auto; }
+}
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Przejdź do treści</a>
