@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Planer budżetu marketingowego</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Przejdź do treści</a>
+
+  <header class="app-header">
+    <h1>Planer budżetu marketingowego</h1>
+    <button type="button" class="btn btn-primary" id="btn-new-plan">Nowy plan</button>
+  </header>
+
+  <main id="main">
+    <!-- Lista planów (FR-21) -->
+    <section id="view-list" aria-labelledby="list-heading">
+      <h2 id="list-heading">Twoje plany</h2>
+      <p class="muted" id="list-empty" hidden>Nie masz jeszcze żadnych planów. Utwórz pierwszy, aby zacząć.</p>
+      <ul class="plan-list" id="plan-list"></ul>
+    </section>
+
+    <!-- Edytor planu -->
+    <section id="view-plan" hidden aria-labelledby="plan-heading">
+      <div class="plan-toolbar">
+        <button type="button" class="btn btn-ghost" id="btn-back">← Wszystkie plany</button>
+        <p class="save-status" id="save-status" role="status" aria-live="polite"></p>
+        <div class="toolbar-actions">
+          <button type="button" class="btn" id="btn-duplicate">Duplikuj</button>
+          <button type="button" class="btn" id="btn-export-csv">Eksport CSV</button>
+          <button type="button" class="btn" id="btn-export-xlsx">Eksport XLSX</button>
+          <button type="button" class="btn btn-danger" id="btn-delete">Usuń</button>
+        </div>
+      </div>
+
+      <h2 id="plan-heading" class="visually-hidden">Edycja planu</h2>
+
+      <!-- Konfiguracja (FR-01, FR-02) -->
+      <form class="card config-form" id="config-form" novalidate>
+        <div class="field">
+          <label for="plan-name">Nazwa planu</label>
+          <input id="plan-name" type="text" maxlength="80" required>
+        </div>
+        <div class="field">
+          <label for="plan-year">Rok</label>
+          <input id="plan-year" type="number" min="2000" max="2100" step="1" required>
+        </div>
+        <div class="field">
+          <label for="plan-budget">Budżet roczny</label>
+          <input id="plan-budget" type="number" min="0.01" max="999999999" step="0.01" inputmode="decimal" required>
+        </div>
+        <div class="field">
+          <label for="plan-currency">Waluta</label>
+          <select id="plan-currency">
+            <option value="PLN">PLN</option>
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+      </form>
+
+      <!-- Pasek sumy alokacji (FR-08) -->
+      <section class="card" aria-labelledby="progress-heading">
+        <h3 id="progress-heading">Rozdysponowanie budżetu</h3>
+        <div class="progress" role="progressbar" aria-labelledby="progress-heading"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <p class="progress-text" id="progress-text"></p>
+        <div class="alert" id="alert" role="alert" hidden></div>
+      </section>
+
+      <!-- Tabela alokacji (US-03, US-04, US-06) -->
+      <section class="card" aria-labelledby="alloc-heading">
+        <h3 id="alloc-heading">Kategorie i ROI</h3>
+        <div class="table-wrap">
+          <table class="alloc-table">
+            <caption class="visually-hidden">Alokacja budżetu i przewidywany zwrot według kategorii</caption>
+            <thead>
+              <tr>
+                <th scope="col">Kategoria</th>
+                <th scope="col">Udział %</th>
+                <th scope="col">Kwota</th>
+                <th scope="col">ROI %</th>
+                <th scope="col">Zwrot netto</th>
+                <th scope="col">Wartość brutto</th>
+                <th scope="col">Udział w zwrocie</th>
+                <th scope="col"><span class="visually-hidden">Akcje</span></th>
+              </tr>
+            </thead>
+            <tbody id="alloc-body"></tbody>
+            <tfoot id="alloc-foot"></tfoot>
+          </table>
+        </div>
+
+        <form class="add-category" id="add-category-form">
+          <label for="new-category">Dodaj własną kategorię</label>
+          <div class="inline">
+            <input id="new-category" type="text" maxlength="60" placeholder="np. Podcasty">
+            <button type="submit" class="btn">Dodaj</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Wizualizacje (FR-18, FR-19) -->
+      <div class="charts">
+        <section class="card" aria-labelledby="pie-heading">
+          <h3 id="pie-heading">Udział w budżecie</h3>
+          <div class="pie-wrap">
+            <div class="pie" id="pie" role="img" aria-label="Wykres kołowy udziału kategorii w budżecie"></div>
+            <ul class="legend" id="pie-legend"></ul>
+          </div>
+        </section>
+        <section class="card" aria-labelledby="bar-heading">
+          <h3 id="bar-heading">Zwrot netto na kategorię</h3>
+          <div class="bars" id="bars"></div>
+        </section>
+      </div>
+
+      <!-- Scenariusze (FR-15 – FR-17) -->
+      <section class="card" aria-labelledby="scen-heading">
+        <h3 id="scen-heading">Scenariusze</h3>
+        <p class="muted">Scenariusz mnoży ROI wszystkich kategorii: pesymistyczny −30%, bazowy 0%, optymistyczny +30%. Wartości są szacunkowe.</p>
+        <div class="table-wrap">
+          <table class="scen-table">
+            <thead>
+              <tr>
+                <th scope="col">Wskaźnik</th>
+                <th scope="col">Pesymistyczny</th>
+                <th scope="col">Bazowy</th>
+                <th scope="col">Optymistyczny</th>
+              </tr>
+            </thead>
+            <tbody id="scen-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <p class="disclaimer">ROI jest wartością szacunkową podaną przez użytkownika. Definicja: ROI = (Zwrot − Koszt) / Koszt × 100%. Zwrot netto = Kwota × ROI; wartość brutto = Kwota × (1 + ROI).</p>
+    </section>
+  </main>
+
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+    <form method="dialog" class="dialog-body">
+      <h2 id="confirm-title">Potwierdź</h2>
+      <p id="confirm-text"></p>
+      <div class="dialog-actions">
+        <button type="submit" value="cancel" class="btn">Anuluj</button>
+        <button type="submit" value="ok" class="btn btn-danger" id="confirm-ok">Tak</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/calc.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
